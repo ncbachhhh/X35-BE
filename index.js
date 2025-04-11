@@ -55,6 +55,10 @@ app.post('/auth/user/register', UserController.createUser);
 app.post ('/auth/user/login', UserController.login);
 app.get("/auth/user/get-profile", authUser, UserController.getProfile);
 
+// Quên mật khẩu
+app.post("/auth/send-code-forgot-password", UserController.sendResetPasswordEmail);
+app.post("/auth/verify-code-and-reset-password", UserController.verifyCodeAndResetPassword);
+
 // Xác thực tài khoản
 // - Bước 1
 app.post("/auth/verify-email",UserController.verifyEmail);

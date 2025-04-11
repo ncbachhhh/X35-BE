@@ -119,6 +119,37 @@ const UserController = {
             message: response.message,
             user: response.user,
         });
+    },
+
+    sendResetPasswordEmail: async (req, res) => {
+        const {email} = req.body;
+        const response = await UserRepository.sendResetPasswordEmail(email);
+        if (!response.success) {
+            return res.status(400).json({
+                message: response.message,
+                error: response.error,
+            });
+        }
+        return res.status(200).json({
+            message: response.message,
+            token: response.token,
+        });
+    },
+
+    verifyCodeAndResetPassword: async (req, res) => {
+        let {token, password, code} = req.body;
+        code = Number(code);
+        const response = await UserRepository.verifyCodeAndResetPassword(token, password, code);
+        if (!response.success) {
+            return res.status(400).json({
+                message: response.message,
+                error: response.error,
+            });
+        }
+        return res.status(200).json({
+            message: response.message,
+            user: response.user,
+        });
     }
 }
 

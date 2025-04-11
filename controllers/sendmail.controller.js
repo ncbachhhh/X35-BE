@@ -14,6 +14,33 @@ const sendMailController = {
         return token;
     },
 
+    generateVerification6DigitsCode: (email) => {
+        const code = Math.floor(100000 + Math.random() * 900000);
+        const expiresIn = "15m";
+        const payload = {
+            email,
+            code,
+        }
+        const token = jwt.sign(payload, process.env.JWT_SECRET_KEY, {expiresIn});
+        return token;
+    },
+
+    sendResetPasswordEmail: async (email, token) => {
+        const code = jwt.decode(token, process.env.JWT_SECRET_KEY);
+        const mailOptions = {
+            from: `${process.env.NODE_MAILER_GMAIL}`,
+            to: email,
+            subject: "Reset your password",
+            text: `Your verification code is: ${code.code}. It will expire in 15 minutes.`,
+        };
+
+        try {
+            await transporter.sendMail(mailOptions);
+        } catch (error) {
+            console.error('Error sending reset password email:', error);
+        }
+    },
+
     sendVerificationEmail: async (email, token) => {
         const verificationLink = `${process.env.CLIENT_URL}/verify-email?token=${token}`;
 
@@ -41,7 +68,6 @@ const sendMailController = {
 
         try {
             await transporter.sendMail(mailOptions);
-            console.log('Welcome email sent');
         } catch (error) {
             console.error('Error sending welcome email:', error);
         }

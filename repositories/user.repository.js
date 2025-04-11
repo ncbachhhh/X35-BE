@@ -16,7 +16,6 @@ const UserRepository = {
         return user;
     },
 
-    // Thiếu gửi email xác thực tài khoản
     createUser: async (data) => {
         const {fullname, email, password, address} = data;
 
@@ -75,6 +74,61 @@ const UserRepository = {
         } catch (error) {
             return {
                 message: "Token expired or invalid",
+                error: error,
+            };
+        }
+    },
+
+    sendResetPasswordEmail: async (email) => {
+        try {
+            const token = sendMailController.generateVerification6DigitsCode(email);
+            await sendMailController.sendResetPasswordEmail(email, token);
+            return {
+                token: token,
+                success: true,
+                message: "Reset password email sent successfully",
+            };
+        } catch (error) {
+            return {
+                success: false,
+                message: "Error sending email",
+                error: error,
+            };
+        }
+
+    },
+
+    verifyCodeAndResetPassword: async (token, password, code) => {
+        try {
+            const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
+            const user = await User.findOne({email: decoded.email});
+            if (!user) {
+                return {
+                    message: "User not found",
+                    success: false,
+                };
+            }
+            if (code === decoded.code) {
+                const salt = user.salt;
+                const hashPassword = await bcrypt.hash(password, salt);
+                user.password = hashPassword;
+                await user.save();
+
+                return {
+                    message: "Password reset successfully",
+                    success: true,
+                    user: UserView(user),
+                };
+            } else {
+                return {
+                    message: "Code is incorrect",
+                    success: false,
+                }
+            }
+        } catch (error) {
+            return {
+                message: "Token expired or invalid",
+                success: false,
                 error: error,
             };
         }
