@@ -52,7 +52,6 @@ const UserRepository = {
         }
     },
 
-    // verify email
     verifyEmail: async (token) => {
         try {
             const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);

@@ -4,14 +4,19 @@ import cors from 'cors';
 import * as http from "node:http";
 import {Server} from "socket.io";
 import db from "./database/db.js";
+import upload from "./configs/cloudinary.config.js";
 
 import UserController from "./controllers/user.controller.js";
 import authUser from "./middleware/auth.middleware.js";
+import CarTypeController from "./controllers/car_type.controller.js";
+import CarBrandController from "./controllers/car_brand.controller.js";
+import CarGearboxController from "./controllers/car_gearbox.controller.js";
+import CarController from "./controllers/car.controller.js";
 
-// config dotenv
+// =================== CONFIG ENVIRONMENT ===============================
 dotenv.config();
 
-// create server
+// =================== CONFIG SERVER ===============================
 const app = express();
 const PORT = process.env.PORT || 8000;
 const server = http.createServer(app);
@@ -23,16 +28,17 @@ const io = new Server(server, {
     }
 });
 
-// connect to mongodb
+// ================= DATABASE ===============================
 db.connect();
 
-// middleware
+// ================================ MIDDLEWARE ================================
 app.use(cors({
     origin: process.env.CLIENT_URL,
     credentials: true,
 }));
 app.use(express.json());
 
+// ================================ SOCKET.IO ================================
 // socket.io connection
 io.on('connection', (socket) => {
     console.log('New client connected');
@@ -42,13 +48,7 @@ io.on('connection', (socket) => {
     });
 });
 
-// routes
-app.get('/', (req, res) => {
-    res.status(200).json({
-        message: 'Welcome to the server',
-    });
-})
-
+// ================================ ROUTES ================================
 // Đăng ký
 app.post('/auth/user/register', UserController.createUser);
 // Đăng nhập
@@ -63,7 +63,19 @@ app.post("/auth/verify-code-and-reset-password", UserController.verifyCodeAndRes
 // - Bước 1
 app.post("/auth/verify-email",UserController.verifyEmail);
 
-// start server
+// Thêm loại xe
+app.post("/create/car_type", CarTypeController.createCarType);
+
+// Thêm hãng xe
+app.post("/create/car_brand", CarBrandController.createCarBrand);
+
+// Thêm loại hộp số
+app.post("/create/car_gearbox", CarGearboxController.createCarGearbox);
+
+// Thêm xe mới
+app.post("/create/car", upload.array("image", 3), CarController.createNewCar);
+
+// ================================ START SERVER ================================
 server.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
 });
