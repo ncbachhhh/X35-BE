@@ -17,7 +17,20 @@ const CarBrandRepository = {
                 error: error,
             };
         }
-    }
+    },
+    getCarBrands: async () => {
+        try {
+            const carBrands = await CarBrand.find();
+            return {
+                message: "Car brands retrieved successfully",
+                data: carBrands,
+            };
+        } catch (error) {
+            throw new Error("Error retrieving car brands");
+        }
+    },
+
+
 }
 
 export default CarBrandRepository;

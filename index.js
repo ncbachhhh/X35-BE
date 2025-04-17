@@ -52,7 +52,7 @@ io.on('connection', (socket) => {
 // Đăng ký
 app.post('/auth/user/register', UserController.createUser);
 // Đăng nhập
-app.post ('/auth/user/login', UserController.login);
+app.post('/auth/user/login', UserController.login);
 app.get("/auth/user/get-profile", authUser, UserController.getProfile);
 
 // Quên mật khẩu
@@ -61,16 +61,19 @@ app.post("/auth/verify-code-and-reset-password", UserController.verifyCodeAndRes
 
 // Xác thực tài khoản
 // - Bước 1
-app.post("/auth/verify-email",UserController.verifyEmail);
+app.post("/auth/verify-email",authUser, UserController.verifyEmail);
 
 // Thêm loại xe
 app.post("/create/car_type", CarTypeController.createCarType);
+app.get('/get/car_type', CarTypeController.getCarType);
 
 // Thêm hãng xe
 app.post("/create/car_brand", CarBrandController.createCarBrand);
+app.get("/get/car_brand", CarBrandController.getCarBrand);
 
 // Thêm loại hộp số
 app.post("/create/car_gearbox", CarGearboxController.createCarGearbox);
+app.get("/get/car_gearbox", CarGearboxController.getCarGearbox);
 
 // Thêm xe mới
 app.post("/create/car", upload.array("image", 3), CarController.createNewCar);

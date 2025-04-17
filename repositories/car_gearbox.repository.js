@@ -14,6 +14,17 @@ const CarGearboxRepository = {
                 error: error,
             };
         }
+    },
+    getCarGearbox: async () => {
+        try {
+            const carGearboxes = await CarGearbox.find();
+            return {
+                message: "Car gearboxes retrieved successfully",
+                data: carGearboxes,
+            };
+        } catch (error) {
+            throw new Error("Error retrieving car gearbox");
+        }
     }
 }
 

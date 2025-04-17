@@ -13,6 +13,19 @@ const CarGearboxController = {
             message: response.message,
             data: response,
         });
+    },
+    getCarGearbox: async (req, res) => {
+        try {
+            const response = await CarGearboxRepository.getCarGearbox();
+            return res.status(200).json({
+                message: response.message,
+                data: response.data,
+            });
+        } catch (error) {
+            return res.status(500).json({
+                message: "Error retrieving car gearboxes",
+            });
+        }
     }
 }
 

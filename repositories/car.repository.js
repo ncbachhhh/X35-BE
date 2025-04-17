@@ -12,5 +12,6 @@ const CarRepository = {
       throw new Error("Lỗi khi tạo xe: " + errorMessage); 
     }
   },
+
 };
 export default CarRepository;
