@@ -61,7 +61,7 @@ app.post("/auth/verify-code-and-reset-password", UserController.verifyCodeAndRes
 
 // Xác thực tài khoản
 // - Bước 1
-app.post("/auth/verify-email",authUser, UserController.verifyEmail);
+app.post("/auth/verify-email", UserController.verifyEmail);
 
 // Thêm loại xe
 app.post("/create/car_type", CarTypeController.createCarType);
@@ -76,7 +76,13 @@ app.post("/create/car_gearbox", CarGearboxController.createCarGearbox);
 app.get("/get/car_gearbox", CarGearboxController.getCarGearbox);
 
 // Thêm xe mới
-app.post("/create/car", upload.array("image", 3), CarController.createNewCar);
+app.post("/create/car", authUser, upload.array("image", 3), CarController.createNewCar);
+
+// Lấy danh sách xe
+app.post("/get/cars", CarController.getCarListing);
+
+// Thích xe
+app.post("/like/car", CarController.likeCar);
 
 // ================================ START SERVER ================================
 server.listen(PORT, () => {

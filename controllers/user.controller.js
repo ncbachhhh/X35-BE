@@ -5,32 +5,29 @@ import jwt from "jsonwebtoken";
 
 const UserController = {
     createUser: async (req, res) => {
-        const {email} = req.body;
-
-        // Check if the email is already registered
-        const existEmail = await UserRepository.getUserByEmail(email);
-        if (existEmail) {
-            return res.status(400).json({
-                message: "Email already exists",
+        try {
+            const { email, password, name } = req.body;
+            // Kiểm tra xem email đã được đăng ký chưa
+            const existEmail = await UserRepository.getUserByEmail(email);
+            if (existEmail) {
+                return res.status(400).json({
+                    message: "Email already exists",
+                });
+            }
+            // Tạo người dùng mới
+            const result = await UserRepository.createUser(req.body);
+            // Trả về người dùng mới với mã trạng thái 201 (Đã tạo)
+            return res.status(201).json({
+                message: "Create user successfully",
+                user: result.user,
+            });
+        } catch (error) {
+            // Bắt các lỗi không mong muốn và trả về mã lỗi 500
+            return res.status(500).json({
+                message: "Error creating user",
+                error: error.message,
             });
         }
-
-        // Create the user
-        const result = await UserRepository.createUser(req.body);
-
-        // Check if there was an error creating the user
-        if (result.error) {
-            return res.status(400).json({
-                message: result.message,
-                error: result.error,
-            });
-        }
-
-        // Return the created user
-        return res.status(200).json({
-            message: result.message,
-            user: result.user,
-        });
     },
 
     login: async (req, res) => {

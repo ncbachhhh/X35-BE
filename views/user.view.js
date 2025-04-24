@@ -6,6 +6,7 @@ const UserView = (user) => {
         email: user.email,
         address: user.address,
         role: user.role,
+        likedCars: user.likedCars,
     }
 }
 

@@ -37,6 +37,7 @@ const userSchema = new mongoose.Schema({
     salt: {
         type: String,
     },
+    likedCars: [mongoose.Schema.Types.ObjectId],
 }, {timestamps: true});
 
 const User = mongoose.model('users', userSchema);

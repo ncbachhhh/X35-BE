@@ -25,6 +25,19 @@ const CarGearboxRepository = {
         } catch (error) {
             throw new Error("Error retrieving car gearbox");
         }
+    },
+    getCarGearboxById: async (id) => {
+        try {
+            const carGearbox = await CarGearbox.findById(id);
+            if (!carGearbox) {
+                throw new Error("Car gearbox not found");
+            }
+            return {
+                carGearbox: carGearbox,
+            };
+        } catch (error) {
+            throw new Error("Error retrieving car gearbox");
+        }
     }
 }
 

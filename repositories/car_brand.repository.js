@@ -29,6 +29,19 @@ const CarBrandRepository = {
             throw new Error("Error retrieving car brands");
         }
     },
+    getCarBrandById: async (id) => {
+        try {
+            const carBrand = await CarBrand.findById(id);
+            if (!carBrand) {
+                throw new Error("Car brand not found");
+            }
+            return {
+                carBrand: carBrand,
+            };
+        } catch (error) {
+            throw new Error("Error retrieving car brand");
+        }
+    }
 
 
 }

@@ -26,6 +26,19 @@ const CarTypeRepository = {
             throw new Error("Error getting car types");
         }
     },
+    getCarTypeById: async (id) => {
+        try {
+            const carType = await CarType.findById(id);
+            if (!carType) {
+                throw new Error("Car type not found");
+            }
+            return {
+                carType: carType,
+            };
+        } catch (error) {
+            throw new Error("Error getting car type");
+        }
+    }
 }
 
 export default CarTypeRepository;

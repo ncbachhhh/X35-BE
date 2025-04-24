@@ -57,21 +57,6 @@ const sendMailController = {
             console.error('Error sending verification email:', error);
         }
     },
-
-    sendWelcomeEmail: async (email) => {
-        const mailOptions = {
-            from: `${process.env.NODE_MAILER_GMAIL}`,
-            to: email,
-            subject: 'Welcome to our service',
-            text: 'Thank you for registering with us!',
-        };
-
-        try {
-            await transporter.sendMail(mailOptions);
-        } catch (error) {
-            console.error('Error sending welcome email:', error);
-        }
-    }
 }
 
 export default sendMailController;

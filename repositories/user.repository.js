@@ -17,29 +17,28 @@ const UserRepository = {
     },
 
     createUser: async (data) => {
-        const {fullname, email, password, address} = data;
-
-        const salt = await bcrypt.genSalt(10);
-        const hashPassword = await bcrypt.hash(password, salt);
-
-        const user = new User({
-            fullname,
-            email,
-            password: hashPassword,
-            address,
-            salt
-        });
+        const { fullname, email, password, address } = data;
 
         try {
-            // Thiếu gửi email xác thực tài khoản
-            // Gửi email xác thực tài khoản, nếu click vào link thì sẽ được xác thực tài khoản, chuyên verificationStep = 1
-            await sendMailController.sendWelcomeEmail(email);
-            const token = sendMailController.generateVerificationToken(email);
-            await sendMailController.sendVerificationEmail(email, token);
+            // Tạo salt và mã hóa mật khẩu
+            const salt = await bcrypt.genSalt(10);
+            const hashPassword = await bcrypt.hash(password, salt);
 
-            // Lưu tài khoản vào database
+            // Tạo đối tượng người dùng
+            const user = new User({
+                fullname,
+                email,
+                password: hashPassword,
+                address,
+                salt
+            });
+
+            // Lưu người dùng vào cơ sở dữ liệu trước khi gửi email xác thực
             await user.save();
 
+            // Gửi email xác thực tài khoản
+            const token = sendMailController.generateVerificationToken(email);
+            await sendMailController.sendVerificationEmail(email, token);
             return {
                 message: "User created successfully",
                 user: UserView(user),
@@ -47,7 +46,7 @@ const UserRepository = {
         } catch (error) {
             return {
                 message: "Error creating user",
-                error: error,
+                error: error.message || error,
             };
         }
     },
