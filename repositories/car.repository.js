@@ -16,8 +16,42 @@ const CarRepository = {
             throw new Error("Lỗi khi tạo xe: " + errorMessage);
         }
     },
+
+    getCarById: async (id) => {
+        try {
+            const car = await Car.findById(id);
+            const carType = await CarTypeRepository.getCarTypeById(car.type);
+            const carBrand = await CarBrandRepository.getCarBrandById(car.brand);
+            const carGearbox = await CarGearboxRepository.getCarGearboxById(car.gearbox);
+
+            const newCar = {
+                _id: car._id,
+                name: car.name,
+                brand: carBrand.carBrand.name,
+                type: carType.carType.name,
+                gearbox: carGearbox.carGearbox.name,
+                price: car.price,
+                image: car.image,
+                description: car.description,
+                seat: car.seat,
+                tank: car.tank,
+                createdAt: car.createdAt,
+                updatedAt: car.updatedAt
+            }
+
+            if (!car) {
+                throw new Error("Car not found");
+            }
+            return newCar;
+        } catch (error) {
+            console.error("🔥 Lỗi trong repository:", error);
+            const errorMessage = error?.message || JSON.stringify(error);
+            throw new Error("Lỗi khi lấy xe: " + errorMessage);
+        }
+    },
+
     getCarListing: async (data) => {
-        const {keyword, type, capacity, price, gearbox, sortBy, page} = data;
+        const {keyword, type, capacity, price, gearbox, sortBy, page, limit} = data;
         const query = {}
 
         if (keyword) {
@@ -59,7 +93,6 @@ const CarRepository = {
             sort[field] = direction === 'desc' ? -1 : 1;
         }
 
-        const limit = 12;
         const skip = (page - 1) * limit;
         const total = await Car.countDocuments(query);
 
@@ -96,6 +129,7 @@ const CarRepository = {
             total
         }
     },
+
     likeCar: async (userId, carId) => {
         try {
             const user = await User.findById(userId);
@@ -111,6 +145,59 @@ const CarRepository = {
         } catch (error) {
             throw new Error("Error like car: " + (error?.message || JSON.stringify(error)));
         }
+    },
+
+    findCarsByIds: async (ids) => {
+        const cars = await Car.find({
+            _id: {$in: ids}
+        }).lean(); // Trả về object JS thường
+        return cars;
+    },
+
+    findCarsByBrandOrType: async (brands, types, excludeIds, limit) => {
+        const cars = await Car.find({
+            _id: {$nin: excludeIds}, // Không lấy lại xe đã like
+            $or: [
+                {brand: {$in: brands}},
+                {type: {$in: types}}
+            ]
+        }).limit(limit).lean();
+        return cars;
+    },
+
+    findRandomCars: async (limit) => {
+        const cars = await Car.find({})
+            .limit(limit)
+            .lean();
+        return cars;
+    },
+
+    getFullInfoCar: async (cars) => {
+        const fullInfoCar = await Promise.all(
+            cars.map(async (car) => {
+                const carType = await CarTypeRepository.getCarTypeById(car.type);
+                const carBrand = await CarBrandRepository.getCarBrandById(car.brand);
+                const carGearbox = await CarGearboxRepository.getCarGearboxById(car.gearbox);
+                return {
+                    _id: car._id,
+                    name: car.name,
+                    brand: carBrand.carBrand.name,
+                    type: carType.carType.name,
+                    gearbox: carGearbox.carGearbox.name,
+                    capacity: car.capacity,
+                    tank: car.tank,
+                    seat: car.seat,
+                    price: car.price,
+                    image: car.image,
+                    description: car.description,
+                    createdAt: car.createdAt,
+                    updatedAt: car.updatedAt
+                }
+            })
+        );
+
+        return fullInfoCar;
     }
+
 };
 export default CarRepository;

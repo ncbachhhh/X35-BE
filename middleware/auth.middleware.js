@@ -1,5 +1,4 @@
 import jwt from "jsonwebtoken";
-import UserService from "../controllers/user.controller.js";
 
 const authUser = (req, res, next) => {
     const secretKey = process.env.JWT_SECRET_KEY;
@@ -19,8 +18,7 @@ const authUser = (req, res, next) => {
         const decoded = jwt.decode(accessToken);
         req.user = decoded;
         next();
-    }
-    catch (error) {
+    } catch (error) {
         return res.status(401).json({
             message: "The request was unauthenticated",
         });

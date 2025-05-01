@@ -4,14 +4,12 @@ import cors from 'cors';
 import * as http from "node:http";
 import {Server} from "socket.io";
 import db from "./database/db.js";
-import upload from "./configs/cloudinary.config.js";
-
-import UserController from "./controllers/user.controller.js";
-import authUser from "./middleware/auth.middleware.js";
-import CarTypeController from "./controllers/car_type.controller.js";
-import CarBrandController from "./controllers/car_brand.controller.js";
-import CarGearboxController from "./controllers/car_gearbox.controller.js";
-import CarController from "./controllers/car.controller.js";
+import authRoutes from './routes/auth.routes.js';
+import carTypeRoutes from './routes/carType.routes.js';
+import carBrandRoutes from './routes/carBrand.routes.js';
+import carGearboxRoutes from './routes/carGearbox.routes.js';
+import carRoutes from './routes/car.routes.js';
+import paymentRoutes from './routes/payment.routes.js';
 
 // =================== CONFIG ENVIRONMENT ===============================
 dotenv.config();
@@ -49,40 +47,13 @@ io.on('connection', (socket) => {
 });
 
 // ================================ ROUTES ================================
-// Đăng ký
-app.post('/auth/user/register', UserController.createUser);
-// Đăng nhập
-app.post('/auth/user/login', UserController.login);
-app.get("/auth/user/get-profile", authUser, UserController.getProfile);
+app.use('/api/auth', authRoutes);
+app.use('/api/car-type', carTypeRoutes);
+app.use('/api/car-brand', carBrandRoutes);
+app.use('/api/car-gearbox', carGearboxRoutes);
+app.use('/api/car', carRoutes);
+app.use('/api/payment', paymentRoutes);
 
-// Quên mật khẩu
-app.post("/auth/send-code-forgot-password", UserController.sendResetPasswordEmail);
-app.post("/auth/verify-code-and-reset-password", UserController.verifyCodeAndResetPassword);
-
-// Xác thực tài khoản
-// - Bước 1
-app.post("/auth/verify-email", UserController.verifyEmail);
-
-// Thêm loại xe
-app.post("/create/car_type", CarTypeController.createCarType);
-app.get('/get/car_type', CarTypeController.getCarType);
-
-// Thêm hãng xe
-app.post("/create/car_brand", CarBrandController.createCarBrand);
-app.get("/get/car_brand", CarBrandController.getCarBrand);
-
-// Thêm loại hộp số
-app.post("/create/car_gearbox", CarGearboxController.createCarGearbox);
-app.get("/get/car_gearbox", CarGearboxController.getCarGearbox);
-
-// Thêm xe mới
-app.post("/create/car", authUser, upload.array("image", 3), CarController.createNewCar);
-
-// Lấy danh sách xe
-app.post("/get/cars", CarController.getCarListing);
-
-// Thích xe
-app.post("/like/car", CarController.likeCar);
 
 // ================================ START SERVER ================================
 server.listen(PORT, () => {
