@@ -4,72 +4,73 @@ import moment from 'moment';
 import QRCode from 'qrcode';
 
 const sortObject = (obj) => {
-    const sorted = {};
-    const keys = Object.keys(obj).sort();
-    for (let key of keys) {
-        sorted[key] = obj[key];
+    let sorted = {};
+    let str = [];
+    let key;
+    for (key in obj) {
+        if (obj.hasOwnProperty(key)) {
+            str.push(encodeURIComponent(key));
+        }
+    }
+    str.sort();
+    for (key = 0; key < str.length; key++) {
+        sorted[str[key]] = encodeURIComponent(obj[str[key]]).replace(/%20/g, "+");
     }
     return sorted;
 };
 
 export const createVNPayUrl = async (req, res) => {
     try {
-        const rawIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress || '127.0.0.1';
-        const ipAddr = rawIp === '::1' ? '127.0.0.1' : rawIp;
+        const ipAddr = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+        const tmnCode = process.env.VNP_TMNCODE;
+        const secretKey = process.env.VNP_HASH_SECRET;
+        const vnpUrl = process.env.VNP_URL;
+        const returnUrl = process.env.VNP_RETURN_URL;
 
-        const tmnCode = '2QXUI4J4';
-        const secretKey = 'SECRETKEY1234567890';
-        const vnpUrl = 'https://sandbox.vnpayment.vn/paymentv2/vpcpay.html';
-        const returnUrl = 'http://localhost:3000/payment/callback';
+        const date = new Date();
+        const createDate = moment(date).format('YYYYMMDDHHmmss');
+        const orderId = req.body.orderId;
+        const amount = req.body.amount; // VND * 100
+        const locale = "vn";
+        const currCode = "VND";
+        const bankCode = req.body.bankCode;
 
-        const date = moment().format('YYYYMMDDHHmmss');
-        const orderId = moment().format('DDHHmmss');
-        const amount = req.body.amount * 100;
 
-        let vnp_Params = {
-            vnp_Version: '2.1.0',
-            vnp_Command: 'pay',
-            vnp_TmnCode: tmnCode,
-            vnp_Amount: amount,
-            vnp_CurrCode: 'VND',
-            vnp_TxnRef: orderId,
-            vnp_OrderInfo: `Thanh toan don hang so ${orderId}`,
-            vnp_OrderType: 'other',
-            vnp_Locale: 'vn',
-            vnp_ReturnUrl: returnUrl,
-            vnp_IpAddr: ipAddr,
-            vnp_CreateDate: date,
-        };
+        let vnp_Params = {};
+        vnp_Params['vnp_Version'] = '2.1.0';
+        vnp_Params['vnp_Command'] = 'pay';
+        vnp_Params['vnp_TmnCode'] = tmnCode;
+        vnp_Params['vnp_Locale'] = locale;
+        vnp_Params['vnp_CurrCode'] = currCode;
+        vnp_Params['vnp_TxnRef'] = orderId;
+        vnp_Params['vnp_OrderInfo'] = `Thanh toán đơn hàng ${orderId}`;
+        vnp_Params['vnp_OrderType'] = "other";
+        vnp_Params['vnp_Amount'] = amount * 100;
+        vnp_Params['vnp_ReturnUrl'] = returnUrl;
+        vnp_Params['vnp_IpAddr'] = ipAddr;
+        vnp_Params['vnp_CreateDate'] = createDate;
+        if (bankCode !== null && bankCode !== '') {
+            vnp_Params['vnp_BankCode'] = bankCode;
+        }
 
-        // ✅ Sắp xếp tham số theo thứ tự alphabet
-        const sortedParams = sortObject(vnp_Params);
+        vnp_Params = sortObject(vnp_Params);
+        const signData = qs.stringify(vnp_Params, {encode: false});
+        const hmac = crypto.createHmac('sha512', secretKey);
+        const signed = hmac.update(Buffer.from(signData, 'utf-8')).digest('hex');
 
-        // ✅ Tạo chữ ký (không encode)
-        const signData = qs.stringify(sortedParams, {encode: false});
-        const signed = crypto.createHmac('sha512', secretKey)
-            .update(signData)
-            .digest('hex');
+        vnp_Params['vnp_SecureHash'] = signed;
 
-        // ✅ Gán chữ ký vào tham số
-        sortedParams.vnp_SecureHash = signed;
-
-        // ✅ Tạo URL có encode (rất quan trọng)
-        const paymentUrl = vnpUrl + '?' + qs.stringify(sortedParams, {encode: true});
-
-        // ✅ Tạo mã QR từ URL
-        const qrCode = await QRCode.toDataURL(encodeURI(paymentUrl));
+        const paymentUrl = `${vnpUrl}?${qs.stringify(vnp_Params, {encode: false})}`;
+        const qrCode = await QRCode.toDataURL(paymentUrl); // Tạo ảnh QR
 
         return res.status(200).json({
-            message: 'VNPay payment URL generated successfully',
             paymentUrl,
-            qrCode,
+            qrCode
         });
+        // res.redirect(paymentUrl);
 
     } catch (error) {
-        console.error('❌ VNPay error:', error);
-        return res.status(500).json({
-            message: 'Failed to generate VNPay QR',
-            error: error.message,
-        });
+        console.error("❌ VNPay error:", error);
+        return res.status(500).json({message: "Lỗi tạo QR thanh toán", error: error.message});
     }
 };

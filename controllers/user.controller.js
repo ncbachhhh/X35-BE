@@ -6,7 +6,7 @@ import jwt from "jsonwebtoken";
 const UserController = {
     createUser: async (req, res) => {
         try {
-            const { email, password, name } = req.body;
+            const {email, password, name} = req.body;
             // Kiểm tra xem email đã được đăng ký chưa
             const existEmail = await UserRepository.getUserByEmail(email);
             if (existEmail) {
@@ -147,7 +147,84 @@ const UserController = {
             message: response.message,
             user: response.user,
         });
-    }
+    },
+
+    addRecentViewedCar: async (req, res) => {
+        try {
+            const userId = req.user.id;
+            const {carId} = req.body;
+
+            if (!carId) {
+                return res.status(400).json({message: "Car ID is required"});
+            }
+
+            await UserRepository.addRecentViewedCar(userId, carId);
+
+            return res.status(200).json({message: "Car added to recent viewed list"});
+
+        } catch (error) {
+            console.error("🔥 Error in addRecentViewedCar:", error);
+            res.status(500).json({message: "Failed to update recent viewed", error: error.message});
+        }
+    },
+
+    getRecentViewedCars: async (req, res) => {
+        try {
+            const userId = req.user.id;
+
+            const user = await UserRepository.getUserWithRecentCars(userId);
+
+            const result = user.recentViewedCars.map(car => {
+                const carObj = car.toObject();
+                return {
+                    ...carObj,
+                    brand: carObj.brand?.name || '',
+                    type: carObj.type?.name || '',
+                    gearbox: carObj.gearbox?.name || ''
+                };
+            });
+
+            return res.status(200).json({
+                message: "Recent viewed cars fetched successfully",
+                data: result || []
+            });
+
+        } catch (error) {
+            console.error("🔥 Error in getRecentViewedCars:", error);
+            res.status(500).json({message: "Failed to fetch recent viewed cars", error: error.message});
+        }
+    },
+
+    changePassword: async (req, res) => {
+        try {
+            const userId = req.user.id;
+            const {oldPassword, newPassword} = req.body;
+
+            if (!oldPassword || !newPassword) {
+                return res.status(400).json({message: "Missing required fields"});
+            }
+
+            const user = await UserRepository.getUserById(userId);
+            if (!user) {
+                return res.status(404).json({message: "User not found"});
+            }
+
+            const isMatch = await bcrypt.compare(oldPassword, user.password);
+            if (!isMatch) {
+                return res.status(400).json({message: "Old password is incorrect"});
+            }
+
+            const newHashed = await bcrypt.hash(newPassword, user.salt);
+            user.password = newHashed;
+            await user.save();
+
+            return res.status(200).json({message: "Password changed successfully"});
+
+        } catch (error) {
+            console.error("❌ Change password error:", error);
+            return res.status(500).json({message: "Failed to change password", error: error.message});
+        }
+    },
 }
 
 export default UserController;

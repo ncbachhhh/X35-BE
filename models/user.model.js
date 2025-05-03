@@ -38,6 +38,10 @@ const userSchema = new mongoose.Schema({
         type: String,
     },
     likedCars: [mongoose.Schema.Types.ObjectId],
+    recentViewedCars: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Car'
+    }]
 }, {timestamps: true});
 
 const User = mongoose.model('users', userSchema);

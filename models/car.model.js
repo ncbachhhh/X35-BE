@@ -7,17 +7,17 @@ const carSchema = new mongoose.Schema({
     },
     brand: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'CarBrand',
+        ref: 'car_brands',
         required: true,
     },
     type: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'CarType',
+        ref: 'car_types',
         required: true,
     },
     gearbox: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'CarGearbox',
+        ref: 'car_gearboxes',
         required: true,
     },
     price: {
@@ -40,6 +40,10 @@ const carSchema = new mongoose.Schema({
         type: Number,
         required: true,
     },
+    rate: {
+        type: Number,
+        default: 0,
+    }
 }, {timestamps: true});
 
 const Car = mongoose.model('Car', carSchema);

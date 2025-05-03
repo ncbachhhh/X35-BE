@@ -17,7 +17,14 @@ router.get('/user/get-profile', authUser, UserController.getProfile);
 router.post('/send-code-forgot-password', UserController.sendResetPasswordEmail);
 router.post('/verify-code-and-reset-password', UserController.verifyCodeAndResetPassword);
 
+// Đổi mật khẩu
+router.post('/change-password', authUser, UserController.changePassword);
+
 // Xác thực tài khoản
 router.post('/verify-email', UserController.verifyEmail);
+
+// Recent viewed cars
+router.post('/add-recent-car', authUser, UserController.addRecentViewedCar)
+router.get('/recent-cars', authUser, UserController.getRecentViewedCars);
 
 export default router;
