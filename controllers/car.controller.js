@@ -83,8 +83,6 @@ const CarController = {
         try {
             const userId = req.user.id;
             const {limit} = req.body;
-            console.log("User ID:", userId);
-            console.log("Limit:", limit);
 
             const user = await UserRepository.getUserById(userId);
 

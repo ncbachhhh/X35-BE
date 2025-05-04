@@ -2,75 +2,154 @@ import qs from 'qs';
 import crypto from 'crypto';
 import moment from 'moment';
 import QRCode from 'qrcode';
+import Bill from '../models/bill.model.js';
+import mongoose from 'mongoose';
 
 const sortObject = (obj) => {
-    let sorted = {};
-    let str = [];
-    let key;
-    for (key in obj) {
-        if (obj.hasOwnProperty(key)) {
-            str.push(encodeURIComponent(key));
-        }
-    }
-    str.sort();
-    for (key = 0; key < str.length; key++) {
-        sorted[str[key]] = encodeURIComponent(obj[str[key]]).replace(/%20/g, "+");
+    const sorted = {};
+    const keys = Object.keys(obj).sort();
+    for (let key of keys) {
+        sorted[key] = encodeURIComponent(obj[key]).replace(/%20/g, '+');
     }
     return sorted;
 };
 
-export const createVNPayUrl = async (req, res) => {
-    try {
-        const ipAddr = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
-        const tmnCode = process.env.VNP_TMNCODE;
-        const secretKey = process.env.VNP_HASH_SECRET;
-        const vnpUrl = process.env.VNP_URL;
-        const returnUrl = process.env.VNP_RETURN_URL;
+const paymentController = {
+    createVNPayUrl: async (req, res) => {
+        try {
+            const ipAddr = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+            const {
+                orderId,
+                amount,
+                bankCode,
+                carId,
+                name,
+                address,
+                phone,
+                city,
+                'pick-date': pickDate,
+                'pick-time': pickTime,
+                'drop-date': dropDate,
+                'drop-time': dropTime,
+                'pick-location': pickLocation,
+                'drop-location': dropLocation
+            } = req.body;
 
-        const date = new Date();
-        const createDate = moment(date).format('YYYYMMDDHHmmss');
-        const orderId = req.body.orderId;
-        const amount = req.body.amount; // VND * 100
-        const locale = "vn";
-        const currCode = "VND";
-        const bankCode = req.body.bankCode;
+            const tmnCode = process.env.VNP_TMNCODE;
+            const secretKey = process.env.VNP_HASH_SECRET;
+            const vnpUrl = process.env.VNP_URL;
+            const returnBaseUrl = process.env.VNP_RETURN_URL;
+            const returnUrl = `${returnBaseUrl}/api/payment/vnpay_return?redirectUrl=http://localhost:3000/payment/${carId}`;
+            const createDate = moment().format('YYYYMMDDHHmmss');
+            const userId = req.user?.id;
 
+            let vnp_Params = {
+                vnp_Version: '2.1.0',
+                vnp_Command: 'pay',
+                vnp_TmnCode: tmnCode,
+                vnp_Locale: 'vn',
+                vnp_CurrCode: 'VND',
+                vnp_TxnRef: orderId,
+                vnp_OrderInfo: `Thanh toán đơn hàng ${orderId}`,
+                vnp_OrderType: 'other',
+                vnp_Amount: amount * 100,
+                vnp_ReturnUrl: returnUrl,
+                vnp_IpAddr: ipAddr,
+                vnp_CreateDate: createDate,
+            };
 
-        let vnp_Params = {};
-        vnp_Params['vnp_Version'] = '2.1.0';
-        vnp_Params['vnp_Command'] = 'pay';
-        vnp_Params['vnp_TmnCode'] = tmnCode;
-        vnp_Params['vnp_Locale'] = locale;
-        vnp_Params['vnp_CurrCode'] = currCode;
-        vnp_Params['vnp_TxnRef'] = orderId;
-        vnp_Params['vnp_OrderInfo'] = `Thanh toán đơn hàng ${orderId}`;
-        vnp_Params['vnp_OrderType'] = "other";
-        vnp_Params['vnp_Amount'] = amount * 100;
-        vnp_Params['vnp_ReturnUrl'] = returnUrl;
-        vnp_Params['vnp_IpAddr'] = ipAddr;
-        vnp_Params['vnp_CreateDate'] = createDate;
-        if (bankCode !== null && bankCode !== '') {
-            vnp_Params['vnp_BankCode'] = bankCode;
+            if (bankCode) {
+                vnp_Params['vnp_BankCode'] = bankCode;
+            }
+
+            const signData = qs.stringify(sortObject(vnp_Params), {encode: false});
+            const signed = crypto.createHmac('sha512', secretKey)
+                .update(Buffer.from(signData, 'utf-8'))
+                .digest('hex');
+            vnp_Params['vnp_SecureHash'] = signed;
+
+            const paymentUrl = `${vnpUrl}?${qs.stringify(vnp_Params, {encode: false})}`;
+            const qrCode = await QRCode.toDataURL(paymentUrl);
+
+            // Kiểm tra xem hóa đơn đã tồn tại chưa
+            const existingBill = await Bill.findOne({orderId});
+            if (!existingBill) {
+                await Bill.create({
+                    user: userId ? new mongoose.Types.ObjectId(userId) : null,
+                    car: new mongoose.Types.ObjectId(carId),
+                    orderId,
+                    amount,
+                    bankCode,
+                    transactionDate: createDate,
+                    responseCode: '',
+                    transactionStatus: 'pending',
+                    name,
+                    address,
+                    phone,
+                    city,
+                    pickDate,
+                    pickTime,
+                    dropDate,
+                    dropTime,
+                    pickLocation,
+                    dropLocation
+                });
+            }
+
+            return res.status(200).json({
+                isSuccess: true,
+                message: 'QR generated and bill created successfully',
+                paymentUrl,
+                qrCode,
+                orderId,
+            });
+        } catch (error) {
+            console.error('❌ VNPay error:', error);
+            return res.status(500).json({
+                isSuccess: false,
+                message: 'Lỗi tạo QR thanh toán',
+                error: error.message,
+            });
         }
+    },
+    handleVNPayReturn: async (req, res) => {
+        try {
+            const {vnp_SecureHash, ...params} = req.query;
+            const redirectUrl = params.redirectUrl || 'http://localhost:3000';
+            delete params.redirectUrl;
 
-        vnp_Params = sortObject(vnp_Params);
-        const signData = qs.stringify(vnp_Params, {encode: false});
-        const hmac = crypto.createHmac('sha512', secretKey);
-        const signed = hmac.update(Buffer.from(signData, 'utf-8')).digest('hex');
+            const secretKey = process.env.VNP_HASH_SECRET;
+            const sortedParams = sortObject(params);
+            const signData = qs.stringify(sortedParams, {encode: false});
+            const signed = crypto.createHmac('sha512', secretKey)
+                .update(Buffer.from(signData, 'utf-8'))
+                .digest('hex');
 
-        vnp_Params['vnp_SecureHash'] = signed;
+            if (signed !== vnp_SecureHash) {
+                return res.status(400).json({isSuccess: false, message: 'Invalid checksum'});
+            }
 
-        const paymentUrl = `${vnpUrl}?${qs.stringify(vnp_Params, {encode: false})}`;
-        const qrCode = await QRCode.toDataURL(paymentUrl); // Tạo ảnh QR
+            const bill = await Bill.findOne({orderId: params.vnp_TxnRef});
+            if (!bill) {
+                return res.status(404).json({isSuccess: false, message: 'Bill not found'});
+            }
 
-        return res.status(200).json({
-            paymentUrl,
-            qrCode
-        });
-        // res.redirect(paymentUrl);
+            bill.transactionStatus = params.vnp_TransactionStatus;
+            bill.responseCode = params.vnp_ResponseCode;
+            bill.transactionDate = params.vnp_PayDate;
+            bill.bankCode = params.vnp_BankCode || bill.bankCode;
+            await bill.save();
 
-    } catch (error) {
-        console.error("❌ VNPay error:", error);
-        return res.status(500).json({message: "Lỗi tạo QR thanh toán", error: error.message});
+            return res.redirect(`${redirectUrl}?success=${params.vnp_ResponseCode === '00'}`);
+        } catch (error) {
+            console.error('❌ handleVNPayReturn error:', error);
+            return res.status(500).json({
+                isSuccess: false,
+                message: 'Internal server error',
+                error: error.message,
+            });
+        }
     }
 };
+
+export default paymentController;
