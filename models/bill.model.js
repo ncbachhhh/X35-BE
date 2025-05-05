@@ -8,7 +8,7 @@ const billSchema = new mongoose.Schema({
     },
     car: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'Car',
+        ref: 'cars',
         required: true,
     },
     orderId: {
@@ -44,5 +44,5 @@ const billSchema = new mongoose.Schema({
     marketing: Boolean,
 }, {timestamps: true});
 
-const Bill = mongoose.model('Bill', billSchema);
+const Bill = mongoose.model('bills', billSchema);
 export default Bill;

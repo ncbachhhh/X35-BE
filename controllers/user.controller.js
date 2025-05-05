@@ -33,7 +33,7 @@ const UserController = {
     login: async (req, res) => {
         const {email, password, remember} = req.body;
 
-        // Check if the email is already registered
+        // Lấy user từ DB
         const user = await UserRepository.getUserByEmail(email);
         if (!user) {
             return res.status(400).json({
@@ -41,36 +41,27 @@ const UserController = {
             });
         }
 
-        // Check if the password is correct
-        const salt = user.salt;
-        const hashPassword = await bcrypt.hash(password, salt);
-        if (user.password !== hashPassword) {
+        // So sánh với mật khẩu mới nhất trong danh sách passwords
+        const isMatch = await bcrypt.compare(password, user.passwords[0]);
+        if (!isMatch) {
             return res.status(400).json({
                 message: "Password is incorrect",
             });
         }
 
-        // Password is correct, generate JWT tokens
-        // Generate JWT tokens
-
-        // Check if remember me is checked
+        // Tạo access token & refresh token
         const secretKey = process.env.JWT_SECRET_KEY;
         const accessTokenExpires = process.env.JWT_ACCESS_TOKEN_EXPIRES;
         const refreshTokenExpires = process.env.JWT_REFRESH_TOKEN_EXPIRES;
 
-        const accessTokenPayload = {
+        const payload = {
             id: user._id,
             email: user.email,
             fullname: user.fullname,
-        }
+        };
 
-        const accessToken = jwt.sign(accessTokenPayload, secretKey, {
-            expiresIn: accessTokenExpires,
-        });
-
-        const refreshToken = jwt.sign(accessTokenPayload, secretKey, {
-            expiresIn: refreshTokenExpires,
-        });
+        const accessToken = jwt.sign(payload, secretKey, {expiresIn: accessTokenExpires});
+        const refreshToken = jwt.sign(payload, secretKey, {expiresIn: refreshTokenExpires});
 
         return res.status(200).json({
             message: "Login successfully",
@@ -79,8 +70,7 @@ const UserController = {
                 accessToken,
                 refreshToken,
             }
-        })
-
+        });
     },
 
     getProfile: async (req, res) => {
@@ -209,13 +199,26 @@ const UserController = {
                 return res.status(404).json({message: "User not found"});
             }
 
-            const isMatch = await bcrypt.compare(oldPassword, user.password);
+            // So sánh mật khẩu hiện tại (mới nhất)
+            const isMatch = await bcrypt.compare(oldPassword, user.passwords[0]);
             if (!isMatch) {
                 return res.status(400).json({message: "Old password is incorrect"});
             }
 
+            // Kiểm tra nếu newPassword trùng với bất kỳ 1 trong 3 mật khẩu gần nhất
+            for (let old of user.passwords) {
+                if (await bcrypt.compare(newPassword, old)) {
+                    return res.status(400).json({message: "New password must be different from the last 3 passwords"});
+                }
+            }
+
+            // Hash và thêm mật khẩu mới vào đầu mảng
             const newHashed = await bcrypt.hash(newPassword, user.salt);
-            user.password = newHashed;
+            user.passwords.unshift(newHashed);
+
+            // Chỉ giữ lại 3 mật khẩu gần nhất
+            user.passwords = user.passwords.slice(0, 3);
+
             await user.save();
 
             return res.status(200).json({message: "Password changed successfully"});
@@ -224,7 +227,8 @@ const UserController = {
             console.error("❌ Change password error:", error);
             return res.status(500).json({message: "Failed to change password", error: error.message});
         }
-    },
+    }
+
 }
 
 export default UserController;

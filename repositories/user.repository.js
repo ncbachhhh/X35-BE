@@ -22,23 +22,24 @@ const UserRepository = {
         try {
             // Tạo salt và mã hóa mật khẩu
             const salt = await bcrypt.genSalt(10);
-            const hashPassword = await bcrypt.hash(password, salt);
+            const hashedPassword = await bcrypt.hash(password, salt);
 
-            // Tạo đối tượng người dùng
+            // Tạo đối tượng người dùng với mật khẩu đầu tiên trong mảng passwords
             const user = new User({
                 fullname,
                 email,
-                password: hashPassword,
+                passwords: [hashedPassword], // ← sử dụng mảng passwords thay vì password
                 address,
                 salt
             });
 
-            // Lưu người dùng vào cơ sở dữ liệu trước khi gửi email xác thực
+            // Lưu người dùng vào cơ sở dữ liệu
             await user.save();
 
             // Gửi email xác thực tài khoản
             const token = sendMailController.generateVerificationToken(email);
             await sendMailController.sendVerificationEmail(email, token);
+
             return {
                 message: "User created successfully",
                 user: UserView(user),
@@ -100,34 +101,52 @@ const UserRepository = {
         try {
             const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
             const user = await User.findOne({email: decoded.email});
+
             if (!user) {
                 return {
                     message: "User not found",
                     success: false,
                 };
             }
-            if (code === decoded.code) {
-                const salt = user.salt;
-                const hashPassword = await bcrypt.hash(password, salt);
-                user.password = hashPassword;
-                await user.save();
 
-                return {
-                    message: "Password reset successfully",
-                    success: true,
-                    user: UserView(user),
-                };
-            } else {
+            if (code !== decoded.code) {
                 return {
                     message: "Code is incorrect",
                     success: false,
-                }
+                };
             }
+
+            const salt = user.salt;
+            const newHashedPassword = await bcrypt.hash(password, salt);
+
+            // Kiểm tra xem mật khẩu mới có trùng với bất kỳ mật khẩu cũ nào không
+            const isRecentlyUsed = await Promise.any(
+                user.passwords.map(async (oldPass) => await bcrypt.compare(password, oldPass))
+            ).catch(() => false);
+
+            if (isRecentlyUsed) {
+                return {
+                    message: "This password was used recently. Please choose a new one.",
+                    success: false,
+                };
+            }
+
+            // Thêm mật khẩu mới vào đầu mảng passwords
+            user.passwords.unshift(newHashedPassword);
+            user.passwords = user.passwords.slice(0, 3); // Giữ lại 3 cái gần nhất
+
+            await user.save();
+
+            return {
+                message: "Password reset successfully",
+                success: true,
+                user: UserView(user),
+            };
         } catch (error) {
             return {
                 message: "Token expired or invalid",
                 success: false,
-                error: error,
+                error: error.message || error,
             };
         }
     },

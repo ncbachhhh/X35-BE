@@ -10,9 +10,10 @@ const userSchema = new mongoose.Schema({
         required: true,
         unique: true,
     },
-    password: {
-        type: String,
+    passwords: {
+        type: [String], // Lưu trữ các mật khẩu đã băm
         required: true,
+        validate: [arr => arr.length > 0 && arr.length <= 3, 'Must have 1-3 passwords']
     },
     address: {
         type: String,
