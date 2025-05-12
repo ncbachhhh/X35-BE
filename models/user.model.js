@@ -41,7 +41,7 @@ const userSchema = new mongoose.Schema({
     likedCars: [mongoose.Schema.Types.ObjectId],
     recentViewedCars: [{
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'Car'
+        ref: 'cars'
     }]
 }, {timestamps: true});
 

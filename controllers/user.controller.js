@@ -2,6 +2,7 @@ import UserRepository from "../repositories/user.repository.js";
 import bcrypt from "bcrypt";
 import UserView from "../views/user.view.js";
 import jwt from "jsonwebtoken";
+import BillRepository from "../repositories/bill.repository.js";
 
 const UserController = {
     createUser: async (req, res) => {
@@ -227,8 +228,43 @@ const UserController = {
             console.error("❌ Change password error:", error);
             return res.status(500).json({message: "Failed to change password", error: error.message});
         }
-    }
+    },
 
+    returnCar: async (req, res) => {
+        const {billId} = req.body;
+        if (!billId) {
+            return res.status(400).json({message: "Bill ID is required"});
+        }
+        const response = await UserRepository.returnCar(billId);
+        if (response) {
+            return res.status(200).json({
+                message: "Car returned successfully",
+            });
+        } else {
+            return res.status(400).json({
+                message: "Error returning car",
+            });
+        }
+    },
+
+    getUserRentedCars: async (req, res) => {
+        try {
+            const userId = req.user.id;
+            const rentedCars = await BillRepository.getRentedCarsByUser(userId);
+
+            return res.status(200).json({
+                message: "Fetched rented cars successfully",
+                data: rentedCars
+            });
+        } catch (error) {
+            console.error("❌ Error in getUserRentedCars:", error);
+            return res.status(500).json({
+                message: "Failed to get rented cars",
+                error: error.message
+            });
+        }
+    },
+    
 }
 
 export default UserController;

@@ -10,6 +10,7 @@ import carBrandRoutes from './routes/carBrand.routes.js';
 import carGearboxRoutes from './routes/carGearbox.routes.js';
 import carRoutes from './routes/car.routes.js';
 import paymentRoutes from './routes/payment.routes.js';
+import feedbackRoutes from "./routes/feedback.routes.js";
 
 // =================== CONFIG ENVIRONMENT ===============================
 dotenv.config();
@@ -53,7 +54,7 @@ app.use('/api/car-brand', carBrandRoutes);
 app.use('/api/car-gearbox', carGearboxRoutes);
 app.use('/api/car', carRoutes);
 app.use('/api/payment', paymentRoutes);
-
+app.use('/api/feedback', feedbackRoutes);
 
 // ================================ START SERVER ================================
 server.listen(PORT, () => {

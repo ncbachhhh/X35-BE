@@ -43,7 +43,11 @@ const carSchema = new mongoose.Schema({
     rate: {
         type: Number,
         default: 0,
-    }
+    },
+    beingRented: {
+        type: Boolean,
+        default: false,
+    },
 }, {timestamps: true});
 
 const Car = mongoose.model('cars', carSchema);

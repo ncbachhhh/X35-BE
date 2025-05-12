@@ -27,4 +27,10 @@ router.post('/verify-email', UserController.verifyEmail);
 router.post('/add-recent-car', authUser, UserController.addRecentViewedCar)
 router.get('/recent-cars', authUser, UserController.getRecentViewedCars);
 
+// Trả xe
+router.post("/return-car", authUser, UserController.returnCar);
+
+// Lấy danh sách xe đã thuê
+router.get("/rented-cars", authUser, UserController.getUserRentedCars);
+
 export default router;

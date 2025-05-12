@@ -4,6 +4,7 @@ import moment from 'moment';
 import QRCode from 'qrcode';
 import Bill from '../models/bill.model.js';
 import mongoose from 'mongoose';
+import Car from "../models/car.model.js";
 
 const sortObject = (obj) => {
     const sorted = {};
@@ -139,6 +140,14 @@ const paymentController = {
             bill.transactionDate = params.vnp_PayDate;
             bill.bankCode = params.vnp_BankCode || bill.bankCode;
             await bill.save();
+
+            if (params.vnp_ResponseCode === '00') {
+                const car = await Car.findById(bill.car);
+                if (car) {
+                    car.beingRented = true;
+                    await car.save();
+                }
+            }
 
             return res.redirect(`${redirectUrl}?success=${params.vnp_ResponseCode === '00'}`);
         } catch (error) {

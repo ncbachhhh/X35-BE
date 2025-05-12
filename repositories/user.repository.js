@@ -3,6 +3,8 @@ import UserView from "../views/user.view.js";
 import bcrypt from "bcrypt";
 import sendMailController from "../controllers/sendmail.controller.js";
 import jwt from "jsonwebtoken";
+import Bill from "../models/bill.model.js";
+import Car from "../models/car.model.js";
 
 
 const UserRepository = {
@@ -174,6 +176,19 @@ const UserRepository = {
 
         return await user.save();
     },
+
+    returnCar: async (billId) => {
+        const bill = await Bill.findById(billId);
+        if (!bill) {
+            return null;
+        }
+        const car = await Car.findById(bill.car);
+        car.beingRented = false;
+        await car.save();
+
+        return bill;
+    },
+
 }
 
 export default UserRepository;
