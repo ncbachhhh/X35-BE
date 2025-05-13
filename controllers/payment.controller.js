@@ -145,6 +145,7 @@ const paymentController = {
                 const car = await Car.findById(bill.car);
                 if (car) {
                     car.beingRented = true;
+                    car.rentCount += 1;
                     await car.save();
                 }
             }

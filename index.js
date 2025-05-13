@@ -1,16 +1,16 @@
 import express from 'express';
 import dotenv from 'dotenv';
 import cors from 'cors';
-import * as http from "node:http";
-import {Server} from "socket.io";
-import db from "./database/db.js";
+import * as http from 'node:http';
+import setupSocket from './configs/socket.config.js'; // Import socket.io config
+import db from './database/db.js';
 import authRoutes from './routes/auth.routes.js';
 import carTypeRoutes from './routes/carType.routes.js';
 import carBrandRoutes from './routes/carBrand.routes.js';
 import carGearboxRoutes from './routes/carGearbox.routes.js';
 import carRoutes from './routes/car.routes.js';
 import paymentRoutes from './routes/payment.routes.js';
-import feedbackRoutes from "./routes/feedback.routes.js";
+import feedbackRoutes from './routes/feedback.routes.js';
 
 // =================== CONFIG ENVIRONMENT ===============================
 dotenv.config();
@@ -19,13 +19,9 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 8000;
 const server = http.createServer(app);
-const io = new Server(server, {
-    cors: {
-        origin: process.env.CLIENT_URL,
-        methods: ["GET", "POST"],
-        credentials: true,
-    }
-});
+
+// ================= CONFIG SOCKET.IO ============================
+const io = setupSocket(server);
 
 // ================= DATABASE ===============================
 db.connect();
@@ -36,16 +32,6 @@ app.use(cors({
     credentials: true,
 }));
 app.use(express.json());
-
-// ================================ SOCKET.IO ================================
-// socket.io connection
-io.on('connection', (socket) => {
-    console.log('New client connected');
-
-    socket.on('disconnect', () => {
-        console.log('Client disconnected');
-    });
-});
 
 // ================================ ROUTES ================================
 app.use('/api/auth', authRoutes);

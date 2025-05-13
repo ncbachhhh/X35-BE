@@ -48,6 +48,10 @@ const carSchema = new mongoose.Schema({
         type: Boolean,
         default: false,
     },
+    rentCount: {
+        type: Number,
+        default: 0,
+    }
 }, {timestamps: true});
 
 const Car = mongoose.model('cars', carSchema);

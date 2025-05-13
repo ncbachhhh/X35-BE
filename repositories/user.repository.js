@@ -188,7 +188,6 @@ const UserRepository = {
 
         return bill;
     },
-
 }
 
 export default UserRepository;

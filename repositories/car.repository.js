@@ -11,7 +11,7 @@ const CarRepository = {
             await car.save();
             return car;
         } catch (error) {
-            console.error("🔥 Lỗi trong repository:", error);
+            console.error("Lỗi trong repository:", error);
             const errorMessage = error?.message || JSON.stringify(error);
             throw new Error("Lỗi khi tạo xe: " + errorMessage);
         }
@@ -19,34 +19,39 @@ const CarRepository = {
 
     getCarById: async (id) => {
         try {
-            const car = await Car.findById(id);
-            const carType = await CarTypeRepository.getCarTypeById(car.type);
-            const carBrand = await CarBrandRepository.getCarBrandById(car.brand);
-            const carGearbox = await CarGearboxRepository.getCarGearboxById(car.gearbox);
+            // Truy vấn xe với các thông tin liên quan thông qua populate
+            const car = await Car.findById(id)
+                .populate('type', 'name')   // Populate trường type và chỉ lấy tên
+                .populate('brand', 'name')  // Populate trường brand và chỉ lấy tên
+                .populate('gearbox', 'name'); // Populate trường gearbox và chỉ lấy tên
 
+            // Kiểm tra nếu xe không tồn tại
+            if (!car) {
+                throw new Error("Car not found");
+            }
+
+            // Trả về thông tin xe cùng với các thông tin chi tiết đã populate
             const newCar = {
                 _id: car._id,
                 name: car.name,
-                brand: carBrand.carBrand.name,
-                type: carType.carType.name,
-                gearbox: carGearbox.carGearbox.name,
+                brand: car.brand.name,         // Lấy tên thương hiệu từ populated data
+                type: car.type.name,           // Lấy tên loại xe từ populated data
+                gearbox: car.gearbox.name,     // Lấy tên hộp số từ populated data
                 price: car.price,
                 image: car.image,
                 description: car.description,
                 seat: car.seat,
                 tank: car.tank,
+                beingRented: car.beingRented,
                 createdAt: car.createdAt,
                 updatedAt: car.updatedAt
             }
 
-            if (!car) {
-                throw new Error("Car not found");
-            }
             return newCar;
+
         } catch (error) {
-            console.error("🔥 Lỗi trong repository:", error);
-            const errorMessage = error?.message || JSON.stringify(error);
-            throw new Error("Lỗi khi lấy xe: " + errorMessage);
+            console.error("Error in repository:", error);
+            throw new Error("Error fetching car: " + (error.message || JSON.stringify(error)));
         }
     },
 
@@ -197,6 +202,37 @@ const CarRepository = {
         );
 
         return fullInfoCar;
+    },
+
+    getPopularCar: async () => {
+        try {
+            const cars = await Car.find()
+                .sort({rentCount: -1})
+                .limit(4)
+                .populate('type', 'name')   // Populate trường type và chỉ lấy tên
+                .populate('brand', 'name')  // Populate trường brand và chỉ lấy tên
+                .populate('gearbox', 'name'); // Populate trường gearbox và chỉ lấy tên
+
+            const newCars = cars.map(car => ({
+                _id: car._id,
+                name: car.name,
+                brand: car.brand.name,
+                type: car.type.name,
+                gearbox: car.gearbox.name,
+                price: car.price,
+                image: car.image,
+                description: car.description,
+                seat: car.seat,
+                tank: car.tank,
+                beingRented: car.beingRented,
+                createdAt: car.createdAt,
+                updatedAt: car.updatedAt
+            }));
+
+            return newCars;
+        } catch (error) {
+            console.error('Error fetching popular cars:', error);
+        }
     }
 
 };

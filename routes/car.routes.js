@@ -20,4 +20,7 @@ router.post('/like', CarController.likeCar);
 // Lấy các xe được recommend từ các xe đã like
 router.post('/recommend-by-liked', authUser, CarController.getRecommendCarsFromLiked);
 
+// Lấy các xe được thuê nhiều
+router.get('/popular-cars', CarController.getPopularCar);
+
 export default router;

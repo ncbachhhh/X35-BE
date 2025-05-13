@@ -3,6 +3,8 @@ import bcrypt from "bcrypt";
 import UserView from "../views/user.view.js";
 import jwt from "jsonwebtoken";
 import BillRepository from "../repositories/bill.repository.js";
+import User from "../models/user.model.js";
+import CarRepository from "../repositories/car.repository.js";
 
 const UserController = {
     createUser: async (req, res) => {
@@ -154,7 +156,7 @@ const UserController = {
             return res.status(200).json({message: "Car added to recent viewed list"});
 
         } catch (error) {
-            console.error("🔥 Error in addRecentViewedCar:", error);
+            console.error("Error in addRecentViewedCar:", error);
             res.status(500).json({message: "Failed to update recent viewed", error: error.message});
         }
     },
@@ -181,7 +183,7 @@ const UserController = {
             });
 
         } catch (error) {
-            console.error("🔥 Error in getRecentViewedCars:", error);
+            console.error("Error in getRecentViewedCars:", error);
             res.status(500).json({message: "Failed to fetch recent viewed cars", error: error.message});
         }
     },
@@ -264,7 +266,28 @@ const UserController = {
             });
         }
     },
-    
+    getLikedCars: async (req, res) => {
+        try {
+            const userId = req.user.id;  // Giả sử bạn đã xác thực người dùng thông qua JWT
+            const user = await User.findById(userId).populate('likedCars');
+            const cars = await Promise.all(user.likedCars.map(async (carId) => {
+                const car = await CarRepository.getCarById(carId);
+                return car;
+            }))
+
+            if (!user) {
+                return res.status(404).json({message: 'User not found'});
+            }
+
+            return res.status(200).json({
+                message: 'Liked cars retrieved successfully',
+                data: cars,
+            });
+        } catch (error) {
+            console.error("Error fetching liked cars:", error);
+            return res.status(500).json({message: 'Error fetching liked cars'});
+        }
+    },
 }
 
 export default UserController;

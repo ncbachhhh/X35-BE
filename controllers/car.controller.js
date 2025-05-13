@@ -18,7 +18,7 @@ const CarController = {
             });
 
         } catch (error) {
-            console.error("🔥 Error:", error);
+            console.error("Error:", error);
             return res.status(500).json({
                 message: "Error creating car",
                 error: error.message || JSON.stringify(error),
@@ -121,10 +121,25 @@ const CarController = {
             });
 
         } catch (error) {
-            console.error("🔥 Error:", error);
+            console.error("Error:", error);
             return res.status(500).json({
                 message: "Error recommending cars",
                 error: error.message || JSON.stringify(error),
+            });
+        }
+    },
+
+    getPopularCar: async (req, res) => {
+        try {
+            const popularCars = await CarRepository.getPopularCar();
+            res.status(200).json({
+                message: 'Popular cars fetched successfully',
+                data: popularCars,
+            });
+        } catch (error) {
+            console.error('Error fetching popular cars:', error);
+            res.status(500).json({
+                message: 'Error fetching popular cars',
             });
         }
     },

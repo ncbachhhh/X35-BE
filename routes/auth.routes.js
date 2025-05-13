@@ -33,4 +33,7 @@ router.post("/return-car", authUser, UserController.returnCar);
 // Lấy danh sách xe đã thuê
 router.get("/rented-cars", authUser, UserController.getUserRentedCars);
 
+// Danh sách xe đã thích
+router.get('/liked-cars', authUser, UserController.getLikedCars);
+
 export default router;
