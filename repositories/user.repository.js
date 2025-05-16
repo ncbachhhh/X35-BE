@@ -188,6 +188,20 @@ const UserRepository = {
 
         return bill;
     },
+
+    getUserList: async (page, limit) => {
+        const skip = (page - 1) * limit;
+        const users = await User.find({}).skip(skip).limit(limit);
+        const totalUsers = await User.countDocuments();
+        const totalPages = Math.ceil(totalUsers / limit);
+
+        return {
+            users: users,
+            totalUsers,
+            totalPages,
+            currentPage: page
+        };
+    }
 }
 
 export default UserRepository;

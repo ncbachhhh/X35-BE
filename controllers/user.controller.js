@@ -288,6 +288,23 @@ const UserController = {
             return res.status(500).json({message: 'Error fetching liked cars'});
         }
     },
+
+    getUserList: async (req, res) => {
+        try {
+            const {limit, page} = req.body;
+            const users = await UserRepository.getUserList(page, limit);
+            if (!users) {
+                return res.status(404).json({message: 'No users found'});
+            }
+            return res.status(200).json({
+                message: 'Users retrieved successfully',
+                data: users,
+            });
+        } catch (error) {
+            console.error("Error fetching user list:", error);
+            return res.status(500).json({message: 'Error fetching user list'});
+        }
+    }
 }
 
 export default UserController;

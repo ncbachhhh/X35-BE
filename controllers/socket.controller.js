@@ -1,59 +1,62 @@
-import Message from '../models/message.model.js'; // Import model Message
+import Message from '../models/message.model.js';
 
-// Hàm gửi tin nhắn từ khách hàng tới toàn bộ admin
-const sendMessageToAdmins = async (socket, io, msg) => {
-    console.log('Customer message:', msg);
-    const messageData = {
-        fromUser: socket.id,  // socket.id của khách hàng
-        toUser: 'admin',      // Gửi cho admin
-        message: msg,
-    };
+const ADMIN_ID = "68234527e33af47bdda55eca";
 
-    // Lưu tin nhắn vào cơ sở dữ liệu MongoDB
-    await saveMessageToDB(messageData);
-
-    // Gửi tin nhắn tới tất cả admin
-    io.sockets.clients('admin').forEach(adminSocketId => {
-        io.to(adminSocketId).emit('chat message', {
-            user: 'Customer',
-            message: msg,
-            fromCustomer: socket.id,
-        });
-    });
-};
-
-// Hàm gửi tin nhắn từ admin đến khách hàng
-const sendMessageToCustomer = async (socket, io, msg, customerSocketId) => {
-    console.log('Admin message to customer:', msg);
-    const messageData = {
-        fromUser: socket.id,  // socket.id của admin
-        toUser: customerSocketId,  // socket.id của khách hàng
-        message: msg,
-    };
-
-    // Lưu tin nhắn vào cơ sở dữ liệu MongoDB
-    await saveMessageToDB(messageData);
-
-    // Gửi tin nhắn tới khách hàng
-    if (customers[customerSocketId]) {
-        io.to(customerSocketId).emit('chat message', {
-            user: 'Admin',
-            message: msg,
-        });
-    } else {
-        console.log('Customer not found');
-    }
-};
-
-// Hàm lưu tin nhắn vào cơ sở dữ liệu MongoDB
-const saveMessageToDB = async (messageData) => {
+// Hàm lưu tin nhắn vào DB
+const saveMessageToDB = async ({fromUser, toUser, message}) => {
     try {
-        const newMessage = new Message(messageData);
-        await newMessage.save();  // Lưu tin nhắn vào DB
-        console.log('Message saved to DB:', messageData);
+        const newMessage = new Message({fromUser, toUser, message});
+        await newMessage.save();
     } catch (error) {
-        console.error('Error saving message to DB:', error);
+        console.error('Error saving message:', error);
     }
 };
 
-export {sendMessageToAdmins, sendMessageToCustomer};
+// Gửi tin nhắn từ user tới tất cả admin đang online
+const sendMessageToAdmins = async (io, fromUserId, message, adminSockets) => {
+    try {
+        // Lưu tin nhắn với adminId cứng
+        await saveMessageToDB({fromUser: fromUserId, toUser: ADMIN_ID, message});
+
+        // Tìm socket admin theo ADMIN_ID
+        const adminSocketId = adminSockets[ADMIN_ID];
+        if (adminSocketId) {
+            io.of('/admin').to(adminSocketId).emit('receive_message', {
+                fromUser: fromUserId,
+                message,
+                timestamp: new Date(),
+            });
+            console.log(`Emit receive_message to adminSocketId: ${adminSocketId}`);
+        } else {
+            console.log("Admin socket not found, cannot send realtime message");
+        }
+    } catch (error) {
+        console.error('Error in sendMessageToAdmins:', error);
+    }
+};
+
+// Gửi tin nhắn từ admin tới 1 khách hàng
+const sendMessageToCustomer = async (io, fromAdminId, toUserId, message, customerSockets) => {
+    try {
+        await saveMessageToDB({fromUser: fromAdminId, toUser: toUserId, message});
+
+        const socketIds = customerSockets[toUserId];
+        if (socketIds && socketIds.size > 0) {
+            socketIds.forEach((socketId) => {
+                io.of('/customer').to(socketId).emit('receive_message', {
+                    fromUser: fromAdminId,
+                    message,
+                    timestamp: new Date(),
+                });
+            });
+            console.log(`Emit receive_message to ${socketIds.size} customer sockets for userId ${toUserId}`);
+        } else {
+            console.log('Customer offline, cannot send message realtime');
+        }
+    } catch (error) {
+        console.error('Error in sendMessageToCustomer:', error);
+    }
+};
+
+
+export {saveMessageToDB, sendMessageToAdmins, sendMessageToCustomer};

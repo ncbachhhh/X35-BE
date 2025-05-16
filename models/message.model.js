@@ -1,24 +1,26 @@
+// message.model.js
+
 import mongoose from 'mongoose';
 
 // Định nghĩa schema tin nhắn
 const messageSchema = new mongoose.Schema(
     {
         fromUser: {
-            type: String,  // ID của người gửi (có thể là socket.id của admin hoặc khách hàng)
-            required: true
+            type: mongoose.Schema.Types.ObjectId,  // ID của người gửi (id của admin hoặc khách hàng không phải socket.id)
+            required: true,
         },
         toUser: {
-            type: String,  // ID của người nhận (có thể là socket.id của admin hoặc khách hàng)
-            required: true
+            type: mongoose.Schema.Types.ObjectId,  // ID của người nhận (id của admin hoặc khách hàng không phải socket.id)
+            required: true,
         },
         message: {
             type: String,
-            required: true
+            required: true,
         },
         timestamp: {
             type: Date,
-            default: Date.now
-        }
+            default: Date.now,
+        },
     },
     {timestamps: true} // Thêm trường createdAt và updatedAt
 );

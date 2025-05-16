@@ -5,12 +5,7 @@ const FeedbackController = {
         try {
             const userId = req.user.id; // Đảm bảo middleware xác thực đã gán req.user
             const {carId, rate, comment} = req.body;
-            console.log({
-                userId,
-                carId,
-                rate,
-                comment
-            })
+
             if (!carId || !rate) {
                 return res.status(400).json({message: "Missing required fields"});
             }
