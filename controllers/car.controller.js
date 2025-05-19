@@ -85,7 +85,6 @@ const CarController = {
             const {limit} = req.body;
 
             const user = await UserRepository.getUserById(userId);
-
             if (!user || !user.likedCars || user.likedCars.length === 0) {
                 // Nếu user không like cái nào → trả random luôn
                 const randomCars = await CarRepository.findRandomCars(limit);
@@ -97,6 +96,7 @@ const CarController = {
 
             const likedCarIds = user.likedCars;
             const likedCars = await CarRepository.findCarsByIds(likedCarIds);
+
 
             const brands = likedCars.map(car => car.brand);
             const types = likedCars.map(car => car.type);

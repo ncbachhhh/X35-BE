@@ -173,8 +173,27 @@ const CarRepository = {
     findRandomCars: async (limit) => {
         const cars = await Car.find({})
             .limit(limit)
-            .lean();
-        return cars;
+            .populate('type', 'name')   // Populate trường type và chỉ lấy tên
+            .populate('brand', 'name')  // Populate trường brand và chỉ lấy tên
+            .populate('gearbox', 'name'); // Populate trường gearbox và chỉ lấy tên;
+
+        const newCars = cars.map(car => ({
+            _id: car._id,
+            name: car.name,
+            brand: car.brand.name,
+            type: car.type.name,
+            gearbox: car.gearbox.name,
+            price: car.price,
+            image: car.image,
+            description: car.description,
+            seat: car.seat,
+            tank: car.tank,
+            beingRented: car.beingRented,
+            createdAt: car.createdAt,
+            updatedAt: car.updatedAt
+        }));
+
+        return newCars;
     },
 
     getFullInfoCar: async (cars) => {

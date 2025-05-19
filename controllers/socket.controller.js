@@ -26,7 +26,7 @@ const sendMessageToAdmins = async (io, fromUserId, message, adminSockets) => {
                 message,
                 timestamp: new Date(),
             });
-            console.log(`Emit receive_message to adminSocketId: ${adminSocketId}`);
+
         } else {
             console.log("Admin socket not found, cannot send realtime message");
         }
@@ -49,7 +49,7 @@ const sendMessageToCustomer = async (io, fromAdminId, toUserId, message, custome
                     timestamp: new Date(),
                 });
             });
-            console.log(`Emit receive_message to ${socketIds.size} customer sockets for userId ${toUserId}`);
+
         } else {
             console.log('Customer offline, cannot send message realtime');
         }
