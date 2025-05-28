@@ -252,7 +252,6 @@ const CarRepository = {
         } catch (error) {
             console.error('Error fetching popular cars:', error);
         }
-    }
-
+    },
 };
 export default CarRepository;
