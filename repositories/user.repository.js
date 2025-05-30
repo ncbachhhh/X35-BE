@@ -201,6 +201,51 @@ const UserRepository = {
             totalPages,
             currentPage: page
         };
+    },
+
+    updateUser: async (data) => {
+        const {userId, fullname, email, address, role} = data;
+        const user = await User.findById(userId);
+        if (!user) {
+            return {
+                message: "User not found",
+                success: false,
+            }
+        }
+
+        user.fullname = fullname;
+        user.email = email;
+        user.address = address;
+        user.role = role;
+
+        await user.save();
+        return {
+            message: "User updated successfully",
+            success: true,
+            user: UserView(user),
+        };
+    },
+
+    deleteUser: async (id) => {
+        try {
+            const user = await User.findByIdAndDelete(id);
+            if (!user) {
+                return {
+                    message: "User not found",
+                    success: false,
+                };
+            }
+            return {
+                message: "User deleted successfully",
+                success: true,
+            };
+        } catch (error) {
+            return {
+                message: "Error deleting user",
+                success: false,
+                error: error.message || error,
+            };
+        }
     }
 }
 

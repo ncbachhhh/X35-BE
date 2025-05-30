@@ -44,7 +44,8 @@ const CarRepository = {
                 tank: car.tank,
                 beingRented: car.beingRented,
                 createdAt: car.createdAt,
-                updatedAt: car.updatedAt
+                updatedAt: car.updatedAt,
+                rate: car.rate
             }
 
             return newCar;

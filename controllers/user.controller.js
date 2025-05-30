@@ -266,6 +266,7 @@ const UserController = {
             });
         }
     },
+
     getLikedCars: async (req, res) => {
         try {
             const userId = req.user.id;  // Giả sử bạn đã xác thực người dùng thông qua JWT
@@ -303,6 +304,37 @@ const UserController = {
         } catch (error) {
             console.error("Error fetching user list:", error);
             return res.status(500).json({message: 'Error fetching user list'});
+        }
+    },
+
+    updateUser: async (req, res) => {
+        try {
+            const data = req.body;
+            const response = await UserRepository.updateUser(data);
+            if (!response.success) {
+                return res.status(404).json({message: 'User not found'});
+            }
+            return res.status(200).json({
+                message: 'Successfully updated user',
+            })
+        } catch (error) {
+            return res.status(500).json({message: 'Error updating user'});
+        }
+    },
+
+    deleteUser: async (req, res) => {
+        try {
+            const {id} = req.body;
+            const response = await UserRepository.deleteUser(id);
+            if (!response.success) {
+                return res.status(404).json({message: 'User not found'});
+            }
+            return res.status(200).json({
+                message: 'Successfully deleted user',
+            });
+        } catch (error) {
+            console.error("Error deleting user:", error);
+            return res.status(500).json({message: 'Error deleting user', error: error.message});
         }
     }
 }

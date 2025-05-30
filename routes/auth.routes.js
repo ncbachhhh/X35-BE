@@ -39,4 +39,8 @@ router.get('/liked-cars', authUser, UserController.getLikedCars);
 // Danh sách user
 router.post('/user_list', authUser, UserController.getUserList);
 
+router.post("/update", authUser, UserController.updateUser);
+
+router.post("/delete", authUser, UserController.deleteUser);
+
 export default router;
