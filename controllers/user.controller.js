@@ -5,6 +5,7 @@ import jwt from "jsonwebtoken";
 import BillRepository from "../repositories/bill.repository.js";
 import User from "../models/user.model.js";
 import CarRepository from "../repositories/car.repository.js";
+import moment from "moment";
 
 const UserController = {
     createUser: async (req, res) => {
@@ -336,7 +337,54 @@ const UserController = {
             console.error("Error deleting user:", error);
             return res.status(500).json({message: 'Error deleting user', error: error.message});
         }
-    }
+    },
+
+    getNewUsersByDate: async (req, res) => {
+        try {
+            // Lấy dữ liệu từ repository, giả sử trả về mảng user có field createdAt
+            const startDate = req.query.startDate || moment().subtract(30, "days").format("YYYY-MM-DD");
+            const endDate = req.query.endDate || moment().format("YYYY-MM-DD");
+
+            // Gọi repo lấy thống kê user mới theo ngày
+            const stats = await UserRepository.getNewUsersByDate(startDate, endDate);
+
+            return res.status(200).json({
+                message: "User registration stats fetched successfully",
+                data: stats,
+            });
+        } catch (error) {
+            console.error("Error in getNewUsersByDate:", error);
+            return res.status(500).json({
+                message: "Failed to fetch user registration stats",
+                error: error.message,
+            });
+        }
+    },
+
+    getRevenueByMonth: async (req, res) => {
+        try {
+            // Lấy startDate, endDate từ query param hoặc mặc định 12 tháng gần nhất
+            const startDate = req.query.startDate
+                ? new Date(req.query.startDate)
+                : moment().subtract(11, "months").startOf("month").toDate();
+            const endDate = req.query.endDate
+                ? new Date(req.query.endDate)
+                : moment().endOf("month").toDate();
+
+            const revenueStats = await BillRepository.getRevenueByMonth(startDate, endDate);
+
+            return res.status(200).json({
+                message: "Revenue statistics fetched successfully",
+                data: revenueStats,
+            });
+        } catch (error) {
+            console.error("Error fetching revenue by month:", error);
+            return res.status(500).json({
+                message: "Failed to fetch revenue statistics",
+                error: error.message,
+            });
+        }
+    },
 }
 
 export default UserController;

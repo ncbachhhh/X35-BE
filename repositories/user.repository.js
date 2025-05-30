@@ -5,6 +5,7 @@ import sendMailController from "../controllers/sendmail.controller.js";
 import jwt from "jsonwebtoken";
 import Bill from "../models/bill.model.js";
 import Car from "../models/car.model.js";
+import moment from "moment";
 
 
 const UserRepository = {
@@ -246,7 +247,39 @@ const UserRepository = {
                 error: error.message || error,
             };
         }
-    }
+    },
+
+    getNewUsersByDate: async (startDate, endDate) => {
+        // Chuyển startDate, endDate thành ngày chính xác (đầu ngày, cuối ngày)
+        const start = moment(startDate).startOf("day").toDate();
+        const end = moment(endDate).endOf("day").toDate();
+
+        // Aggregate nhóm theo ngày và đếm số user
+        const stats = await User.aggregate([
+            {
+                $match: {
+                    createdAt: {$gte: start, $lte: end},
+                },
+            },
+            {
+                $group: {
+                    _id: {
+                        $dateToString: {format: "%Y-%m-%d", date: "$createdAt"},
+                    },
+                    count: {$sum: 1},
+                },
+            },
+            {
+                $sort: {_id: 1},
+            },
+        ]);
+
+        // Chuyển đổi kết quả về dạng [{ date: "2023-05-01", count: 12 }, ...]
+        return stats.map((item) => ({
+            date: item._id,
+            count: item.count,
+        }));
+    },
 }
 
 export default UserRepository;

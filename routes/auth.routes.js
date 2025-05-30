@@ -43,4 +43,8 @@ router.post("/update", authUser, UserController.updateUser);
 
 router.post("/delete", authUser, UserController.deleteUser);
 
+router.get("/new-users-by-date", authUser, UserController.getNewUsersByDate);
+
+router.get("/revenue-by-month", authUser, UserController.getRevenueByMonth);
+
 export default router;
